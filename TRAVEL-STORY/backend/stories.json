@@ -45,5 +45,14 @@
     "visitedLocation": "Paris, France",
     "imageUrl": "http://example.com/image.jpg",
     "visitedDate": "1970-01-01T00:00:02.024Z"
+  },
+  {
+    "id": "1741355290775",
+    "userId": 3,
+    "title": "Trip to Paris",
+    "story": "I had an amazing time visiting the Eiffel Tower...",
+    "visitedLocation": "Paris, France",
+    "imageUrl": "http://example.com/image.jpg",
+    "visitedDate": "1970-01-01T00:00:02.024Z"
   }
 ]

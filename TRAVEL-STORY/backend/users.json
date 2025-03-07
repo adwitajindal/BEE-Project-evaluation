@@ -46,5 +46,11 @@
     "fullName": "gunnu",
     "email": "gunnu@gmail.com",
     "password": "$2b$10$PGMr/mOY61YOIVJedv21yufwnQO8XCSQro3MpdD0z.ywOn3OyRpMu"
+  },
+  {
+    "id": 9,
+    "fullName": "example6",
+    "email": "example6@gmail.com",
+    "password": "$2b$10$Gy3T85OQ4WNvzhD6Jof0iudjZpCfAZQn3UyR8tAA2h5AJOUn2.61m"
   }
 ]
