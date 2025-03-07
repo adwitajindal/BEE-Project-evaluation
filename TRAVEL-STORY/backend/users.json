@@ -1,0 +1,50 @@
+[
+  {
+    "id": "1741323897915",
+    "fullName": "John Doe",
+    "email": "johndoe@example.com",
+    "password": "$2b$10$bx0yXAlo0MjemncmOb.w1eVIhwigseo0oV1hVvx.ylpmkm3HV9onG"
+  },
+  {
+    "id": 2,
+    "fullName": "Johny",
+    "email": "johny@example.com",
+    "password": "$2b$10$e0JI.yTeJw7cpLpJT3kXC.MYXvMszZWV754tCi2eHG3BGhYRFySIe"
+  },
+  {
+    "id": 3,
+    "fullName": "example",
+    "email": "example@example.com",
+    "password": "$2b$10$GwZy2RqUMmjntdaAAZfOOO2o1Z8tqOa8WVIQpELfpwKHVPIXO6NAm"
+  },
+  {
+    "id": 4,
+    "fullName": "adwita",
+    "email": "adwita@gmail.com",
+    "password": "$2b$10$YM7Va/jnszyLMIZ28YHi/.keaZl2HrO1urx2hQXzOjdjactBlsQg2"
+  },
+  {
+    "id": 5,
+    "fullName": "example1",
+    "email": "example1@gmail.com",
+    "password": "$2b$10$2xXhBEC8DO2uSNUuWhkYMetiDWeMeYPoIDhkpf1nZHb0LbkLRAm2m"
+  },
+  {
+    "id": 6,
+    "fullName": "gunn",
+    "email": "gunn@gmail.com",
+    "password": "$2b$10$cYp5dkjn2PDvBg.wa4UVAeeovZ1QvbStCGnlsPugNrJ3XISbXz/nG"
+  },
+  {
+    "id": 7,
+    "fullName": "divya",
+    "email": "divya@gmail.com",
+    "password": "$2b$10$7NbQ8d43Ei45stQD0V/XXeH2VcE78zMr8A2R94duAaIyBh8a0vmyq"
+  },
+  {
+    "id": 8,
+    "fullName": "gunnu",
+    "email": "gunnu@gmail.com",
+    "password": "$2b$10$PGMr/mOY61YOIVJedv21yufwnQO8XCSQro3MpdD0z.ywOn3OyRpMu"
+  }
+]
