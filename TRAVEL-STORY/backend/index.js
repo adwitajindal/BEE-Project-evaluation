@@ -126,7 +126,8 @@ app.get("/get-user", authenticateToken, (req, res) => {
       story,
       visitedLocation,
       imageUrl,
-      visitedDate: new Date(parseInt(visitedDate))
+      visitedDate: new Date(parseInt(visitedDate)), 
+      isFavourite: false,
     };
     stories.push(newStory);
     writeData(STORIES_FILE, stories);
@@ -146,11 +147,167 @@ app.get("/get-user", authenticateToken, (req, res) => {
     const imageUrl = `http://localhost:8000/uploads/${req.file.filename}`;
     res.status(201).json({ imageUrl });
   });
+
+  //***************DELETE AN IMAGE FROM UPLOADS FOLDER*/
+  app.delete("/delete-image",async (req,res) => {
+    const { imageUrl } = req.query;
+
+    if (!imageUrl) {
+      return res
+      .status(400)
+      .json({error: true,message: "imageUrl parameter is required"});
+    }
+
+    try{
+      //extraxt filename from the url
+      const filename = path.basename(imageUrl);
+
+      //define the file path
+      const filePath = path.join(__dirname,'uploads',filename);
+
+      //check if file exists
+      if(fs.existsSync(filePath)){
+        fs.unlinkSync(filePath);
+        res.status(200).json({message : "Ïmage deleted successfully"});
+
+      }
+      else{
+        res.status(200).json({error: true,message: "Image not found"});
+      }
+      
+    }
+    catch(error){
+      res.status(500).json({error: true,message: error.message});
+    }
+  });
   
   //* Serve static files ****************************
   app.use("/uploads", express.static(path.join(__dirname, "uploads")));
   app.use("/assets", express.static(path.join(__dirname, "assets")));
   
+//* EDIT TRAVEL STORY ****************************
+app.post("/edit-story/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { title, story, visitedLocation, imageUrl, visitedDate } = req.body;
+  const { userId } = req.user;
+
+  if (!title || !story || !visitedLocation || !imageUrl || !visitedDate) {
+    return res
+      .status(400)
+      .json({ error: true, message: "All fields are required" });
+  }
+
+  const parsedVisitedDate = new Date(parseInt(visitedDate));
+  const stories = readData(STORIES_FILE);
+
+  // Find index of the story
+  const storyIndex = stories.findIndex(
+    (s) => s.id === id && s.userId === userId
+  );
+
+  if (storyIndex === -1) {
+    return res
+      .status(404)
+      .json({ error: true, message: "Travel Story not found" });
+  }
+
+  const placeholderImgUrl = `http://localhost:8000/assets/placeholder.jpeg`;
+
+  // Update the story
+  stories[storyIndex] = {
+    ...stories[storyIndex],
+    title,
+    story,
+    visitedLocation,
+    imageUrl: imageUrl || placeholderImgUrl,
+    visitedDate: parsedVisitedDate,
+  };
+
+  writeData(STORIES_FILE, stories);
+
+  res
+    .status(200)
+    .json({ story: stories[storyIndex], message: "Update Successful" });
+});
+
+
+
+
+// DELETE A TRAVEL STORY
+app.delete("/delete-story/:id", authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.user;
+
+  try {
+    let stories = readData(STORIES_FILE);
+
+    // Find the index of the story
+    const storyIndex = stories.findIndex(
+      (story) => story.id === id && story.userId === userId
+    );
+
+    if (storyIndex === -1) {
+      return res.status(404).json({ error: true, message: "Travel story not found" });
+    }
+
+    // Extract image file path from the story
+    const imageUrl = stories[storyIndex].imageUrl;
+    const filename = path.basename(imageUrl);
+    const filePath = path.join(__dirname, "uploads", filename);
+
+    // Remove the image file if it exists
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    // Remove story from array and save
+    stories.splice(storyIndex, 1);
+    writeData(STORIES_FILE, stories);
+
+    res.status(200).json({ message: "Travel story deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting travel story:", error.message);
+    res.status(500).json({ error: true, message: "Internal Server Error" });
+  }
+});
+
+//update isFavourite
+app.put("/update-is-favourite/:id", authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const { isFavourite } = req.body;
+  const { userId } = req.user;
+
+  try {
+    let stories = readData(STORIES_FILE);
+
+    // Find index of the story
+    const storyIndex = stories.findIndex(
+      (story) => story.id === id && story.userId === userId
+    );
+
+    if (storyIndex === -1) {
+      return res
+        .status(404)
+        .json({ error: true, message: "Travel story not found" });
+    }
+
+    // Update the isFavourite field
+    stories[storyIndex].isFavourite = isFavourite;
+
+    // Write back updated stories
+    writeData(STORIES_FILE, stories);
+
+    res.status(200).json({
+      story: stories[storyIndex],
+      message: "isFavourite status updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating isFavourite:", error.message);
+    res.status(500).json({ error: true, message: "Internal Server Error" });
+  }
+});
+
+
 
 
 
@@ -167,7 +324,7 @@ module.exports = app;
 
 
 
-
+//1:13
 
 
 
@@ -356,6 +513,72 @@ module.exports = app;
 // //*Serve static files from the uploads and assests directory
 // app.use("/uploads",express.static(path.join(__dirname,"uploads")));
 // app.use("/assets",express.static(path.join(__dirname, "assets")));
+
+//DELETE A TRAVEL STORY  ************************888acc to databse
+// app.delete("/delete-story/:id", authenticateToken, async (req, res) => {
+//   const { id } = req.params;
+//   const { userId } = req.user;
+
+//   try{
+//     const travelStory = await TravelStoryCard.findOne({ _id: id,userId: userId});
+
+//     if(!travelStory){
+//       return res
+//       .status(404)
+//       .json({error: true,message: "travel story not found"});
+//     }
+//     //delete th travel story from the database
+//     await travelStory.deleteOne({ _id: id,userId: userId});
+
+//     //extract the filename from the imageurl
+//     const imageUrl = travelStory.imageUrl;
+//     const filename = path.basename(imageUrl);
+
+//     //define the file path
+//     const filePath = path.join(__dirname,'uploads',filename);
+
+//     //delete the image file from uploads folder
+//     fs.unlink(filePath,(err) =>{
+//       if (err){
+//         console.error("Failed to delete image file:",err);
+//         //optionally ou could still respond with a success status here
+//         //if u dont want to treat this as a critical error.
+//       }
+//     });
+//     res.status(200).json({ message : "Travel story deleted successfully"});
+
+//   }
+//   catch(error){
+//     res.status(500).json({error: true,message: error.message});
+//   }
+// })
+
+
+//update is favourite in databse
+// app.put("/update-is-favourite/:id", authenticateToken, (req, res) => {
+//   const { id } = req.params;
+//   const { isFavourite } = req.body;
+//   const { userId } = req.user;
+
+//   try{
+//     const travelStory = await TravelStory.findOne({_id: id,userId: userId});
+
+//     if(!travelStory){
+//       return res.status(400).json({error: true,message: "Travel story not found"});
+
+//     }
+//     travelStory.isFavourite = isFavourite;
+
+//     await travelStory.save();
+//     res.status(200).json({ stor:travelStory,message: 'Update Successfull'});
+
+//   }catch(error){
+//   res.status(500).json({ error: true,message: error.message});
+//   }
+
+// })
+
+
 
 // app.listen(8000);
 // module.exports = app;

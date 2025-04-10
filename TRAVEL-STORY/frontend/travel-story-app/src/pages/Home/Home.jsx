@@ -2,13 +2,21 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../../components/input/Navbar";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
+import { MdAdd } from "react-icons/md";
 import TravelStoryCard from "../../components/Cards/TravelStoryCard";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 const Home = () => {
   const navigate = useNavigate();
+
   const [userInfo, setUserInfo] = useState(null);
-  
   const [allStories, setAllStories] = useState([]);
 
+  const[openAddEditModal, setOpenAddEditModal]=useState({
+    isShown:false,
+    type:"add",
+    data:null,
+  });
   //get user info*********************************************
   const getUserInfo = async () => {
     try {
@@ -64,7 +72,24 @@ const Home = () => {
   const handleEdit = (data) => {};
 
   const handleViewStory = (data) => {};
-  const isFavourite = async (storyData) => {};
+  const updateIsFavourite = async (storyData) => {
+    const storyId = storyData._id;
+    try{
+      const response=await axiosInstance.put(
+        "/update-is-favourite/"+storyId,
+      {
+        isFavourite: !storyData.isFavourite,
+      }
+    );
+    if(response.data&&response.data.story){
+      toast.success("Story Updated Successfully")
+      getAllTravelStories();
+    }
+    }
+    catch(error){
+      console.log("An unexpected error occured. Please try again.")
+    }
+  };
 
   useEffect(() => {
     // console.log("get all stories");
@@ -106,6 +131,15 @@ const Home = () => {
           <div className="w-[320px]"></div>
         </div>
       </div>
+      <button
+      className="w-16 h-16 flex items-center justify-center rounded-full bg-primary hover:bg-cyan-400 fixed right-10 bottom-10"
+      onClick={() => {
+        setOpenAddEditModal({isShown:true,type:"add",data:null,});
+      }}
+      >
+      <MdAdd className="text-[32px] text-white" />
+      </button>
+      <ToastContainer/>
     </>
   );
 };
