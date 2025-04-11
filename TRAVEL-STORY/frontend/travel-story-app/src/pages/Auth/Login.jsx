@@ -33,9 +33,18 @@ const Login = () => {
       console.log("Login response:", response.data);  // Debugging
   
       if (response.data) { 
+        // localStorage.setItem("token", response.data.accessToken);
+        // localStorage.setItem("userInfo", JSON.stringify(response.data.user)); // Store user info
+        // navigate("/dashboard");
         localStorage.setItem("token", response.data.accessToken);
-        localStorage.setItem("userInfo", JSON.stringify(response.data.user)); // Store user info
-        navigate("/dashboard");
+      localStorage.setItem("userInfo", JSON.stringify(response.data.user));
+      
+      // Check if user is admin and redirect accordingly
+      if (response.data.user.isAdmin) {
+        navigate("/admin"); // Redirect to admin dashboard
+      } else {
+        navigate("/dashboard"); // Redirect to regular dashboard
+      }
       }
     } catch (error) {
       console.error("Login failed", error.response ? error.response.data : error);

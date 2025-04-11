@@ -1,5 +1,4 @@
 require("dotenv").config();
-const config = require("./config.json");
 const fs = require("fs");
 const path = require("path");
 const bcrypt = require("bcrypt");
@@ -7,10 +6,7 @@ const jwt = require("jsonwebtoken");
 const express = require("express");
 const cors = require("cors");
 const upload = require("./multer");
-const { authenticateToken, readData ,writeData} = require("./utilities");
-
-
-// const { authenticateToken } = require("./utilities");
+const { authenticateToken, readData, writeData } = require("./utilities");
 
 const app = express();
 app.use(express.json());
@@ -18,6 +14,7 @@ app.use(cors({ origin: "*" }));
 
 const usersFile = path.join(__dirname, "users.json");
 const STORIES_FILE = "stories.json";
+
 // Function to read users.json
 const readUsers = () => {
   if (!fs.existsSync(usersFile)) return [];
@@ -28,6 +25,28 @@ const readUsers = () => {
 // Function to write to users.json
 const writeUsers = (users) => {
   fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+};
+
+// Admin middleware to check if a user is an admin
+const adminMiddleware = (req, res, next) => {
+  const users = readData(usersFile);
+  const user = users.find(user => user.id === req.user.userId);
+  
+  if (!user && req.user.userId !== "admin-001") {
+    return res.status(403).json({ 
+      error: true, 
+      message: "Access denied. Admin privileges required." 
+    });
+  }
+  
+  if ((user && !user.isAdmin) && req.user.userId !== "admin-001") {
+    return res.status(403).json({ 
+      error: true, 
+      message: "Access denied. Admin privileges required." 
+    });
+  }
+  
+  next();
 };
 
 // **SIGNUP API**
@@ -46,7 +65,13 @@ app.post("/create-account", async (req, res) => {
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const newUser = { id: users.length + 1, fullName, email, password: hashedPassword };
+  const newUser = { 
+    id: users.length + 1, 
+    fullName, 
+    email, 
+    password: hashedPassword,
+    createdAt: new Date().toISOString()
+  };
 
   users.push(newUser);
   writeUsers(users);
@@ -60,25 +85,41 @@ app.post("/create-account", async (req, res) => {
   return res.json({
     error: false,
     message: "Account created successfully",
-    user: { fullName, email },
+    user: { id: newUser.id, fullName, email },
     accessToken,
   });
 });
 
-
-
-
+// **LOGIN API**
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
+  
+  // Check for admin login
+  if (email === "admin@travelmanager.com" && password === "admin123") {
+    const adminUser = {
+      id: "admin-001",
+      fullName: "Admin",
+      email: "admin@travelmanager.com",
+      isAdmin: true
+    };
+    
+    const accessToken = jwt.sign(
+      { userId: adminUser.id },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: "72h" }
+    );
+    
+    return res.json({ accessToken, user: adminUser });
+  }
+  
+  // Regular user login logic
   const users = readUsers();
-
   const user = users.find((u) => u.email === email);
 
   if (!user) {
     return res.status(401).json({ message: "Invalid email or password" });
   }
 
-  // Compare the entered password with the hashed password
   const isPasswordValid = await bcrypt.compare(password, user.password);
   
   if (!isPasswordValid) {
@@ -91,7 +132,9 @@ app.post("/login", async (req, res) => {
     { expiresIn: "72h" }
   );
 
-  res.json({ accessToken, user });
+  // Don't send password to client
+  const { password: _, ...userWithoutPassword } = user;
+  res.json({ accessToken, user: userWithoutPassword });
 });
 
 // **LOGOUT API** (Logout is handled on frontend)
@@ -99,96 +142,139 @@ app.post("/logout", (req, res) => {
   return res.json({ message: "Logged out successfully" });
 });
 
-
-
-
+// Add this endpoint to get public stories for guest users
+app.get("/get-public-stories", (req, res) => {
+  try {
+    // Read all stories
+    const stories = readData(STORIES_FILE);
+    
+    // Filter to only include stories marked as public
+    const publicStories = stories.filter(story => story.public === true);
+    
+    res.status(200).json({ stories: publicStories });
+  } catch (error) {
+    console.error("Error fetching public stories:", error);
+    res.status(500).json({ error: true, message: "Internal Server Error" });
+  }
+});
 
 //* GET USER ****************************
 app.get("/get-user", authenticateToken, (req, res) => {
-    const users = readData(usersFile);
-    const user = users.find(user => user.id === req.user.userId);
-    if (!user) return res.sendStatus(401);
-    res.json({ user, message: "" });
-  });
+  const users = readData(usersFile);
   
-  //* ADD TRAVEL STORY ****************************
-  app.post("/add-travel-story", authenticateToken, (req, res) => {
-    const { title, story, visitedLocation, imageUrl, visitedDate } = req.body;
-    if (!title || !story || !visitedLocation || !imageUrl || !visitedDate) {
-      return res.status(400).json({ error: true, message: "All fields are required" });
+  // Special case for admin user
+  if (req.user.userId === "admin-001") {
+    return res.json({ 
+      user: {
+        id: "admin-001",
+        fullName: "Admin",
+        email: "admin@travelmanager.com",
+        isAdmin: true
+      }, 
+      message: "" 
+    });
+  }
+  
+  const user = users.find(user => user.id === req.user.userId);
+  if (!user) return res.sendStatus(401);
+  
+  // Don't send password to client
+  const { password: _, ...userWithoutPassword } = user;
+  res.json({ user: userWithoutPassword, message: "" });
+});
+
+//* ADD TRAVEL STORY ****************************
+app.post("/add-travel-story", authenticateToken, (req, res) => {
+  const { title, story, visitedLocation, imageUrl, visitedDate, public } = req.body;
+  if (!title || !story || !visitedLocation || !imageUrl || !visitedDate) {
+    return res.status(400).json({ error: true, message: "All fields are required" });
+  }
+  
+  // Check if user is a guest (don't save guest stories)
+  if (req.user.isGuest) {
+    return res.status(200).json({ 
+      story: {
+        id: `guest-${Date.now()}`,
+        userId: req.user.userId,
+        title,
+        story,
+        visitedLocation,
+        imageUrl,
+        visitedDate: new Date(parseInt(visitedDate)),
+        isFavourite: false,
+        public: true,
+        isGuestStory: true
+      }, 
+      message: "Guest story created (not saved permanently)" 
+    });
+  }
+  
+  let stories = readData(STORIES_FILE);
+  const newStory = {
+    id: Date.now().toString(),
+    userId: req.user.userId,
+    title,
+    story,
+    visitedLocation,
+    imageUrl,
+    visitedDate: new Date(parseInt(visitedDate)), 
+    isFavourite: false,
+    public: public || false // Default to private if not specified
+  };
+  stories.push(newStory);
+  writeData(STORIES_FILE, stories);
+  
+  res.status(201).json({ story: newStory, message: "Added Successfully" });
+});
+
+//* GET ALL TRAVEL STORIES ****************************
+app.get("/get-all-stories", authenticateToken, (req, res) => {
+  const stories = readData(STORIES_FILE).filter(story => story.userId === req.user.userId);
+  res.status(200).json({ stories });
+});
+
+//* IMAGE UPLOAD ****************************
+app.post("/image-upload", upload.single("image"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: true, message: "No image uploaded" });
+  const imageUrl = `http://localhost:8000/uploads/${req.file.filename}`;
+  res.status(201).json({ imageUrl });
+});
+
+//***************DELETE AN IMAGE FROM UPLOADS FOLDER*/
+app.delete("/delete-image", async (req, res) => {
+  const { imageUrl } = req.query;
+
+  if (!imageUrl) {
+    return res
+    .status(400)
+    .json({error: true, message: "imageUrl parameter is required"});
+  }
+
+  try {
+    // Extract filename from the url
+    const filename = path.basename(imageUrl);
+
+    // Define the file path
+    const filePath = path.join(__dirname, 'uploads', filename);
+
+    // Check if file exists
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      res.status(200).json({message: "Image deleted successfully"});
     }
-    
-    let stories = readData(STORIES_FILE);
-    const newStory = {
-      id: Date.now().toString(),
-      userId: req.user.userId,
-      title,
-      story,
-      visitedLocation,
-      imageUrl,
-      visitedDate: new Date(parseInt(visitedDate)), 
-      isFavourite: false,
-    };
-    stories.push(newStory);
-    writeData(STORIES_FILE, stories);
-    
-    res.status(201).json({ story: newStory, message: "Added Successfully" });
-  });
-  
-  //* GET ALL TRAVEL STORIES ****************************
-  app.get("/get-all-stories", authenticateToken, (req, res) => {
-    const stories = readData(STORIES_FILE).filter(story => story.userId === req.user.userId);
-    res.status(200).json({ stories });
-  });
-  
-  //* IMAGE UPLOAD ****************************
-  app.post("/image-upload", upload.single("image"), async (req, res) => {
-    if (!req.file) return res.status(400).json({ error: true, message: "No image uploaded" });
-    const imageUrl = `http://localhost:8000/uploads/${req.file.filename}`;
-    res.status(201).json({ imageUrl });
-  });
-
-  //***************DELETE AN IMAGE FROM UPLOADS FOLDER*/
-  app.delete("/delete-image",async (req,res) => {
-    const { imageUrl } = req.query;
-
-    if (!imageUrl) {
-      return res
-      .status(400)
-      .json({error: true,message: "imageUrl parameter is required"});
+    else {
+      res.status(200).json({error: true, message: "Image not found"});
     }
+  }
+  catch (error) {
+    res.status(500).json({error: true, message: error.message});
+  }
+});
 
-    try{
-      //extraxt filename from the url
-      const filename = path.basename(imageUrl);
-
-      //define the file path
-      const filePath = path.join(__dirname,'uploads',filename);
-
-      //check if file exists
-      if(fs.existsSync(filePath)){
-        fs.unlinkSync(filePath);
-        res.status(200).json({message : "Ïmage deleted successfully"});
-
-      }
-      else{
-        res.status(200).json({error: true,message: "Image not found"});
-      }
-      
-    }
-    catch(error){
-      res.status(500).json({error: true,message: error.message});
-    }
-  });
-  
-  //* Serve static files ****************************
-  app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-  app.use("/assets", express.static(path.join(__dirname, "assets")));
-  
 //* EDIT TRAVEL STORY ****************************
 app.post("/edit-story/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { title, story, visitedLocation, imageUrl, visitedDate } = req.body;
+  const { title, story, visitedLocation, imageUrl, visitedDate, public } = req.body;
   const { userId } = req.user;
 
   if (!title || !story || !visitedLocation || !imageUrl || !visitedDate) {
@@ -221,6 +307,7 @@ app.post("/edit-story/:id", authenticateToken, async (req, res) => {
     visitedLocation,
     imageUrl: imageUrl || placeholderImgUrl,
     visitedDate: parsedVisitedDate,
+    public: public || stories[storyIndex].public || false
   };
 
   writeData(STORIES_FILE, stories);
@@ -229,9 +316,6 @@ app.post("/edit-story/:id", authenticateToken, async (req, res) => {
     .status(200)
     .json({ story: stories[storyIndex], message: "Update Successful" });
 });
-
-
-
 
 // DELETE A TRAVEL STORY
 app.delete("/delete-story/:id", authenticateToken, (req, res) => {
@@ -307,20 +391,89 @@ app.put("/update-is-favourite/:id", authenticateToken, (req, res) => {
   }
 });
 
+// Admin endpoints
+app.get("/admin/get-all-users", authenticateToken, adminMiddleware, (req, res) => {
+  try {
+    const users = readUsers();
+    const stories = readData(STORIES_FILE);
+    
+    // Calculate storage used by each user
+    const usersWithStats = users.map(user => {
+      const userStories = stories.filter(story => story.userId === user.id);
+      const storiesCount = userStories.length;
+      
+      // Calculate storage (assuming each story takes up some space)
+      // In a real app, you'd calculate based on actual image sizes
+      const storageUsed = userStories.reduce((total, story) => {
+        // Rough estimate: 1KB for text + image size (if we had it)
+        return total + 1024;
+      }, 0);
+      
+      return {
+        ...user,
+        password: undefined, // Don't send password hash
+        storiesCount,
+        storageUsed,
+        createdAt: user.createdAt || new Date().toISOString()
+      };
+    });
+    
+    res.json({ success: true, users: usersWithStats });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch users" });
+  }
+});
 
+app.delete("/admin/delete-user/:userId", authenticateToken, adminMiddleware, (req, res) => {
+  try {
+    const { userId } = req.params;
+    const userIdNum = parseInt(userId);
+    
+    // Get users and stories
+    let users = readUsers();
+    let stories = readData(STORIES_FILE);
+    
+    // Find user
+    const userIndex = users.findIndex(u => u.id === userIdNum);
+    if (userIndex === -1) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    
+    // Delete user's stories and associated images
+    const userStories = stories.filter(story => story.userId === userIdNum);
+    userStories.forEach(story => {
+      // Delete image file if it exists
+      if (story.imageUrl) {
+        const filename = path.basename(story.imageUrl);
+        const filePath = path.join(__dirname, "uploads", filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+    });
+    
+    // Remove user's stories from stories array
+    stories = stories.filter(story => story.userId !== userIdNum);
+    writeData(STORIES_FILE, stories);
+    
+    // Remove user
+    users.splice(userIndex, 1);
+    writeUsers(users);
+    
+    res.json({ success: true, message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ success: false, message: "Failed to delete user" });
+  }
+});
 
-
-
-
-
-
-
-
+//* Serve static files ****************************
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/assets", express.static(path.join(__dirname, "assets")));
 
 app.listen(8000, () => console.log("Server running on port 8000"));
 module.exports = app;
-
-
 
 
 

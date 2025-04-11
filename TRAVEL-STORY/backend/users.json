@@ -1,18 +1,5 @@
 [
   {
-    "id": "1741323897915",
-    "fullName": "John Doe",
-    "email": "johndoe@example.com",
-    "password": "$2b$10$bx0yXAlo0MjemncmOb.w1eVIhwigseo0oV1hVvx.ylpmkm3HV9onG"
-  },
-  {
-    "id": 2,
-    "fullName": "Johny",
-    "email": "johny@example.com",
-    "password": "$2b$10$e0JI.yTeJw7cpLpJT3kXC.MYXvMszZWV754tCi2eHG3BGhYRFySIe"
-  },
-
-  {
     "id": 3,
     "fullName": "example",
     "email": "example@example.com",
@@ -37,21 +24,9 @@
     "password": "$2b$10$cYp5dkjn2PDvBg.wa4UVAeeovZ1QvbStCGnlsPugNrJ3XISbXz/nG"
   },
   {
-    "id": 7,
-    "fullName": "divya",
-    "email": "divya@gmail.com",
-    "password": "$2b$10$7NbQ8d43Ei45stQD0V/XXeH2VcE78zMr8A2R94duAaIyBh8a0vmyq"
-  },
-  {
     "id": 8,
     "fullName": "gunnu",
     "email": "gunnu@gmail.com",
     "password": "$2b$10$PGMr/mOY61YOIVJedv21yufwnQO8XCSQro3MpdD0z.ywOn3OyRpMu"
-  },
-  {
-    "id": 9,
-    "fullName": "example6",
-    "email": "example6@gmail.com",
-    "password": "$2b$10$Gy3T85OQ4WNvzhD6Jof0iudjZpCfAZQn3UyR8tAA2h5AJOUn2.61m"
   }
 ]
