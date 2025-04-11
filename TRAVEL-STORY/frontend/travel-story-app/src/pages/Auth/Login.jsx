@@ -11,7 +11,6 @@ const Login = () => {
 
   const navigate = useNavigate();
 
-
   const handleLogin = async (e) => {
     e.preventDefault();
   
@@ -48,42 +47,23 @@ const Login = () => {
     }
   };
   
-  
-
-  // const handleLogin = async (e) => {
-  //   e.preventDefault();
-
+  // Add guest login function
+  const handleGuestLogin = () => {
+    // Create guest user object
+    const guestUser = {
+      id: `guest-${Date.now()}`,
+      name: "Guest User",
+      email: "guest@example.com",
+      isGuest: true
+    };
     
-  //   if (!validateEmail(email)) {
-  //     setError("Please enter a valid email address.");
-  //     return;
-  //   }
-  //   if(!password){
-  //     setError("Please enter a password");
-  //     return;
-  //   }
-  //   setError("");
-  //   //login api call
-  //   try{
-  //     const response = await axiosInstance.post("/login", { 
-  //       email:email, 
-  //       password:password,
-  //     });
-  //     if(response.data && response.data.accessToken){
-  //       localStorage.setItem("token", response.data.accessToken);
-  //       navigate("/dashboard");
-  //     }
-  //   }
-  //   catch(error){
-  //     console.error("Login failed", error);
-  //    if(error.response && error.response.data && error.response.data.message){
-  //      setError(error.response.data.message);
-  //   }
-  //   else{
-  //     setError("An unexpected error occurred. Please try again.");
-  //   }
-  // }
-  // };
+    // Store guest user in localStorage (not in users.json)
+    localStorage.setItem("userInfo", JSON.stringify(guestUser));
+    localStorage.setItem("token", `guest-token-${Date.now()}`); // Dummy token
+    
+    // Navigate to dashboard
+    navigate("/dashboard");
+  };
   
   return (
     <div className="h-screen bg-cyan-50 overflow-hidden relative">
@@ -113,13 +93,12 @@ const Login = () => {
               onChange={({ target }) => setEmail(target.value)}
             />
 
-<PasswordInput
-  value={password}
-  onChange={({ target }) => setPassword(target.value)}
-/>
+            <PasswordInput
+              value={password}
+              onChange={({ target }) => setPassword(target.value)}
+            />
 
-
-           {error && <p className="text-red-500 text-xs pb-1">{error}</p>}
+            {error && <p className="text-red-500 text-xs pb-1">{error}</p>}
 
             <button type="submit" className="btn-primary">
               LOGIN
@@ -129,10 +108,19 @@ const Login = () => {
 
             <button
               type="button"
-              className="btn-primary btn-light"
+              className="btn-primary btn-light mb-3"
               onClick={() => navigate("/signUp")}
             >
               CREATE ACCOUNT
+            </button>
+            
+            {/* Add Guest Login Button */}
+            <button
+              type="button"
+              className="btn-primary btn-light bg-gray-100 hover:bg-gray-200 text-gray-700"
+              onClick={handleGuestLogin}
+            >
+              LOGIN AS GUEST
             </button>
           </form>
         </div>

@@ -51,6 +51,24 @@ const SignUp = () => {
       }
     }
   };
+  
+  // Add guest login function
+  const handleGuestLogin = () => {
+    // Create guest user object
+    const guestUser = {
+      id: `guest-${Date.now()}`,
+      name: "Guest User",
+      email: "guest@example.com",
+      isGuest: true
+    };
+    
+    // Store guest user in localStorage (not in users.json)
+    localStorage.setItem("userInfo", JSON.stringify(guestUser));
+    localStorage.setItem("token", `guest-token-${Date.now()}`); // Dummy token
+    
+    // Navigate to dashboard
+    navigate("/dashboard");
+  };
 
   return (
     <div className="h-screen bg-cyan-50 overflow-hidden relative">
@@ -102,11 +120,19 @@ const SignUp = () => {
 
             <button
               type="button"
-              className="btn-primary btn-light"
+              className="btn-primary btn-light mb-3"
               onClick={() => navigate("/login")}
             >
-              
               LOGIN
+            </button>
+            
+            {/* Add Guest Login Button */}
+            <button
+              type="button"
+              className="btn-primary btn-light bg-gray-100 hover:bg-gray-200 text-gray-700"
+              onClick={handleGuestLogin}
+            >
+              LOGIN AS GUEST
             </button>
           </form>
         </div>
