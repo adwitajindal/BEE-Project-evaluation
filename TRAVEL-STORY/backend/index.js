@@ -64,9 +64,13 @@ app.post("/create-account", async (req, res) => {
     return res.status(400).json({ message: "User already exists" });
   }
 
+  const nextId = users.length > 0 
+  ? Math.max(...users.map(user => parseInt(user.id))) + 1 
+  : 1;
+
   const hashedPassword = await bcrypt.hash(password, 10);
   const newUser = { 
-    id: users.length + 1, 
+    id: nextId, 
     fullName, 
     email, 
     password: hashedPassword,
