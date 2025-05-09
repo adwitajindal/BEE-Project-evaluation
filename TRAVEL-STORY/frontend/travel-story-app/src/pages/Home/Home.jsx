@@ -5,7 +5,7 @@ import axiosInstance from "../../utils/axiosInstance";
 import { MdAdd } from "react-icons/md";
 import Modal from "react-modal";
 import TravelStoryCard from "../../components/Cards/TravelStoryCard";
-
+//import ViewTravelStory from "../../components/Cards/ViewTravelStory";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AddEditTravelStory from "./AddEditTravelStory";
@@ -23,6 +23,13 @@ const Home = () => {
     type: "add",
     data: null,
   });
+
+
+const [openViewModal, setOpenViewModal] = useState({
+  isShown: false,
+  type: "add",
+  data: null,
+});
 
   //get user info*********************************************
   const getUserInfo = async () => {
@@ -71,7 +78,9 @@ const Home = () => {
 
   const handleEdit = (data) => {};
 
-  const handleViewStory = (data) => {};
+  const handleViewStory = (data) => {
+    setOpenViewModal({ isShown: true, data });
+  };
   
   const updateIsFavourite = async (storyData) => {
     // For guest stories (temporary ones)
@@ -194,7 +203,7 @@ const Home = () => {
                       visitedLocation={item.visitedLocation}
                       isFavourite={item.isFavourite}
                       isGuestStory={item.isGuestStory}
-                      onEdit={() => handleEdit(item)}
+                      //onEdit={() => handleEdit(item)}
                       onClick={() => handleViewStory(item)}
                       onFavouriteClick={() => updateIsFavourite(item)}
                     />
@@ -237,6 +246,27 @@ const Home = () => {
           onGuestSubmit={handleStorySubmit}
         />
       </Modal>
+
+      {/* VIEW TRAVEL STORY MODEL */}
+      <Modal
+        isOpen={openViewModal.isShown}
+        onRequestClose={() => {
+          setOpenAddEditModal({isShown:false, type:"add", data:null});
+        }}
+        style={{
+          overlay: {
+            backgroundColor: "rgba(0,0,0,0.2)",
+            zindex: 999,
+          },
+        }}
+        appElement={document.getElementById("root")}
+        className="model-box"
+      >
+        {/* <ViewTravelStory
+        type={openViewModal.type}
+        storyInfo={openViewModal.data||null}
+        /> */}
+        </Modal>
 
       <button
         className="w-16 h-16 flex items-center justify-center rounded-full bg-primary hover:bg-cyan-400 fixed right-10 bottom-10"

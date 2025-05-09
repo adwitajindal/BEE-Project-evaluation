@@ -1,14 +1,5 @@
 [
   {
-    "id": "1741324033869",
-    "userId": "1741323897915",
-    "title": "Trip to Paris",
-    "story": "I had an amazing time visiting the Eiffel Tower...",
-    "visitedLocation": "Paris, France",
-    "imageUrl": "http://example.com/image.jpg",
-    "visitedDate": "2024-03-08T03:53:20.000Z"
-  },
-  {
     "id": "1741329864404",
     "userId": 8,
     "title": "titletory1",
