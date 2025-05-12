@@ -7,17 +7,18 @@ import axiosInstance from "../../utils/axiosInstance";
 import moment from "moment";
 import uploadImage from "../../utils/uploadImage";
 import { toast } from "react-toastify";
+import axios from "axios";
 const AddEditTravelStory = ({
   storyInfo,
   type,
   onClose,
   getAllTravelStories,
 }) => {
-  const [title,setTitle]=useState("");
-  const [storyImg,setStoryImg]=useState(null);
-  const [story,setStory]=useState("");
-  const [visitedLocation, setVisitedLocation] = useState([]);
-  const [visitedDate, setVisitedDate] = useState(null);
+  const [title,setTitle]=useState(storyInfo?.title || "");
+  const [storyImg,setStoryImg]=useState(storyInfo?.imageUrl||null);
+  const [story,setStory]=useState(storyInfo?.story || "");
+  const [visitedLocation, setVisitedLocation] = useState(storyInfo?.visitedLocation||[]);
+  const [visitedDate, setVisitedDate] = useState(storyInfo?.visitedDate||null);
     
   const [error, setError]=useState("")
 
@@ -27,7 +28,7 @@ const AddEditTravelStory = ({
     try{
       let imageUrl="";
 
-      const postData={
+      let postData={
            title,
         story,
         imageUrl:storyInfo.imageUrl||"" ,
@@ -60,6 +61,7 @@ const AddEditTravelStory = ({
         onClose();
       }
     }catch (error){
+      console.log(error);
       if(
         error.response &&
         error.response.data &&
@@ -121,6 +123,29 @@ const addNewTravelStory = async () => {
 
     //Delete story image and update the story
     const handleDeleteStoryImg=async()=>{
+      // Deleting the image
+      const deleteImgRes=await axiosInstance.delete("/delete-image",{
+        params:{
+          imageUrl: storyInfo.imageUrl,
+        },
+      });
+      if(deleteImgRes.data){
+        const storyId=storyInfo._id;
+
+        const postData={
+          title,
+          story,
+          visitedLocation,
+          visitedDate:moment().valueOf(),
+          imageUrl: "",
+        };
+        //updating story
+        const response=await axiosInstance.put(
+          "/edit-story/"+storyId,
+          postData
+        );
+        setStoryImg(null);
+      }
       };
 
   return (
