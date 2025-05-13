@@ -10,6 +10,8 @@ const Navbar = ({ userInfo, searchQuery, setSearchQuery, onSearchNote, handleCle
   const isToken = localStorage.getItem("token");
    const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const isAdmin = userInfo?.isAdmin;
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -107,14 +109,14 @@ const requestAccountDeletion = async () => {
 
       {isToken && (
         <>
-          <SearchBar
+          {!isAdmin && (<SearchBar
             value={searchQuery}
             onChange={({ target }) => {
               setSearchQuery(target.value);
             }}
             handleSearch={handleSearch}
             onClearSearch={onClearSearch}
-          />
+          />)}
           <ProfileDropdown userInfo={userInfo} />
         </>
       )}

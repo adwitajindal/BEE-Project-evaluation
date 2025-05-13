@@ -13,13 +13,15 @@ const AddEditTravelStory = ({
   type,
   onClose,
   getAllTravelStories,
+  isGuest = false,
+  onGuestSubmit = null
 }) => {
   const [title,setTitle]=useState(storyInfo?.title || "");
   const [storyImg,setStoryImg]=useState(storyInfo?.imageUrl||null);
   const [story,setStory]=useState(storyInfo?.story || "");
   const [visitedLocation, setVisitedLocation] = useState(storyInfo?.visitedLocation||[]);
   const [visitedDate, setVisitedDate] = useState(storyInfo?.visitedDate||null);
-    
+  const [imageUrl, setImageUrl] = useState(storyInfo?.imageUrl || '');
   const [error, setError]=useState("")
 
   // Update Travel Story
@@ -76,19 +78,39 @@ const AddEditTravelStory = ({
   };
 
   const handleAddOrUpdateClick = () => {
-      console.log("Input Data:", {title, storyImg, story, visitedLocation, visitedDate})
-      if (!title){
-        setError ("Please enter the title");
-        return;
-      }
-      setError("");
-      if(type==="edit"){
-        updateTravelStory();
-      }
-      else{
-        addNewTravelStory();
-      }
+  console.log("Input Data:", {title, storyImg, story, visitedLocation, visitedDate})
+  if (!title){
+    setError("Please enter the title");
+    return;
+  }
+  
+  // If guest user, handle submission differently
+  if (isGuest && onGuestSubmit) {
+    const storyData = {
+      title: title,
+      story: story,
+      visitedDate: visitedDate,
+      visitedLocation: visitedLocation,
+      imageUrl: imageUrl || 'https://picsum.photos/200/300', // Default image
+      public: true // Guest stories are always public in this implementation
     };
+    const result = onGuestSubmit(storyData);
+    
+    if (result && result.success) {
+      setError("");
+      onClose();
+    }
+    return; // Return here to exit the function for guest users
+  }
+  
+  // Only regular users will reach this point
+  setError("");
+  if(type === "edit"){
+    updateTravelStory();
+  } else {
+    addNewTravelStory();
+  }
+};
 
     //add new travel story
 const addNewTravelStory = async () => {
@@ -158,9 +180,9 @@ const addNewTravelStory = async () => {
         <div>
           <div className="flex items-center gap-3 bg-cyan-50/50 p-2 rounded-l-lg">
             {type==='add'?(
-            <button className="btn-small" onClick={handleAddOrUpdateClick}>
-              <MdAdd className="text-lg" /> ADD STORY
-            </button>
+            <button className='btn-small' onClick={handleAddOrUpdateClick}>
+                            <MdAdd className="text-lg"/>{isGuest ? "ADD TEMPORARY STORY" : "ADD STORY"}
+                        </button> 
           ):(
           <>
             <button className="btn-small" onClick={handleAddOrUpdateClick}>
@@ -181,6 +203,12 @@ const addNewTravelStory = async () => {
           )}
         </div>
       </div>
+        {/* Guest mode notification */}
+            {isGuest && (
+                <div className="mt-3 p-2 bg-amber-50 border-l-4 border-amber-400 text-amber-700 text-sm">
+                    <p>You're in guest mode. Your story will only be saved temporarily in this browser session.</p>
+                </div>
+            )}
       <div>
         <div className="flex-1 flex flex-col gap-2 pt-4">
             <label className="input-label">TITLE</label>

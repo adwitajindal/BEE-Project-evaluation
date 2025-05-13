@@ -214,6 +214,24 @@ app.post("/add-travel-story", authenticateToken, async (req, res) => {
   if (!title || !story || !visitedLocation || !imageUrl || !visitedDate) {
     return res.status(400).json({ error: true, message: "All fields are required" });
   }
+if (req.user.isGuest) {
+    return res.status(200).json({ 
+      story: {
+        id: `guest-${Date.now()}`,
+        userId: req.user.userId,
+        title,
+        story,
+        visitedLocation,
+        imageUrl,
+        visitedDate: new Date(parseInt(visitedDate)),
+        isFavourite: false,
+        public: true,
+        isGuestStory: true
+      }, 
+      message: "Guest story created (not saved permanently)" 
+    });
+  }
+  
 
   // Convert visiteddate from milliseconds to date object
   const parsedVisitedDate = new Date(parseInt(visitedDate));

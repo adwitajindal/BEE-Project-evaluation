@@ -30,12 +30,22 @@ const SignUp = () => {
     //SignUp api call
     try {
       const response = await axiosInstance.post("/create-account", {
-        fullName:name,
+        fullName: name,
         email: email,
         password: password,
       });
+      // if (response.data && response.data.accessToken) {
+      //   localStorage.setItem("token", response.data.accessToken);
+      //   navigate("/dashboard");
+      // }
       if (response.data && response.data.accessToken) {
         localStorage.setItem("token", response.data.accessToken);
+
+        // Store user information in localStorage
+        if (response.data.user) {
+          localStorage.setItem("userInfo", JSON.stringify(response.data.user));
+        }
+
         navigate("/dashboard");
       }
     } catch (error) {
@@ -51,7 +61,7 @@ const SignUp = () => {
       }
     }
   };
-  
+
   // Add guest login function
   const handleGuestLogin = () => {
     // Create guest user object
@@ -59,13 +69,13 @@ const SignUp = () => {
       id: `guest-${Date.now()}`,
       name: "Guest User",
       email: "guest@example.com",
-      isGuest: true
+      isGuest: true,
     };
-    
+
     // Store guest user in localStorage (not in users.json)
     localStorage.setItem("userInfo", JSON.stringify(guestUser));
     localStorage.setItem("token", `guest-token-${Date.now()}`); // Dummy token
-    
+
     // Navigate to dashboard
     navigate("/dashboard");
   };
@@ -81,8 +91,8 @@ const SignUp = () => {
               Join the <br /> Adventure
             </h4>
             <p className="text-[15px] text-white leading-6 pr-7 mt-4">
-              Create an account to start documenting your travels and preserving your
-              memories in your personal travel journal.
+              Create an account to start documenting your travels and preserving
+              your memories in your personal travel journal.
             </p>
           </div>
         </div>
@@ -113,7 +123,7 @@ const SignUp = () => {
             {error && <p className="text-red-500 text-xs pb-1">{error}</p>}
 
             <button type="submit" className="btn-primary">
-            CREATE ACCOUNT
+              CREATE ACCOUNT
             </button>
 
             <p className="text-xs text-slate-500 text-center my-4">Or</p>
@@ -125,7 +135,7 @@ const SignUp = () => {
             >
               LOGIN
             </button>
-            
+
             {/* Add Guest Login Button */}
             <button
               type="button"
