@@ -49,7 +49,7 @@ const AddEditTravelStory = ({
       }
 
       
-      const response =await axiosInstance.put(
+      const response =await axiosInstance.post(
         "/edit-story/" + storyId,
         postData);
      
