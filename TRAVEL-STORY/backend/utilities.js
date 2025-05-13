@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const fs = require("fs");
 const path = require("path");
-
+const User = require('./models/user.model'); // Import your User model
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -25,27 +25,32 @@ function authenticateToken(req, res, next) {
 }
 
 // Admin middleware to check if a user is an admin
-function adminMiddleware(req, res, next) {
-  // Skip admin check for guest users
-  if (req.user.isGuest) {
-    return res.status(403).json({ 
-      error: true, 
-      message: "Access denied. Guest users cannot access admin features." 
-    });
-  }
 
-  const usersFile = path.join(__dirname, "users.json");
-  const users = readData(usersFile);
-  const user = users.find(user => user.id === req.user.userId);
-  
-  if (!user || !user.isAdmin) {
-    return res.status(403).json({ 
-      error: true, 
-      message: "Access denied. Admin privileges required." 
-    });
+async function adminMiddleware(req, res, next) {
+  try {
+    // Skip admin check for guest users
+    if (req.user.isGuest) {
+      return res.status(403).json({ 
+        error: true, 
+        message: "Access denied. Guest users cannot access admin features." 
+      });
+    }
+
+    // Check MongoDB for admin status
+    const user = await User.findById(req.user.userId);
+    
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ 
+        error: true, 
+        message: "Access denied. Admin privileges required." 
+      });
+    }
+    
+    next();
+  } catch (error) {
+    console.error("Admin check error:", error);
+    return res.status(500).json({ error: true, message: "Server error" });
   }
-  
-  next();
 }
 
 const writeData = (filename, data) => {
@@ -61,6 +66,8 @@ const readData = (filePath) => {
     return [];
   }
 };
+
+
 
 // Optional middleware that allows both authenticated users and guests
 function allowGuestAccess(req, res, next) {

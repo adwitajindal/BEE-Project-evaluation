@@ -13,10 +13,28 @@ const {authenticateToken} = require("./utilities");
 const User=require("./models/user.model");
 const TravelStory= require("./models/travelStory.model");
 mongoose.connect(config.connectionString);
+const DeletionRequest = require('./models/deletionRequest.model');
+
 
 const app = express();
 app.use(express.json());
 app.use(cors({ origin: "*" }));
+
+app.use((err, req, res, next) => {
+  console.error("Error:", err.message);
+  res.status(err.status || 500).json({
+    status: "error",
+    message: err.message || "Internal Server Error",
+  });
+});
+
+
+// Add this near the top of your index.js file
+const adminRoutes = require("./routes/admin.routes");
+
+// Add this with your other app.use statements
+app.use("/admin", adminRoutes);
+
 
 // app.get("/hello", async (req, res) => {
 //   return res.status(200).json({ message: "Hello World" });
@@ -92,11 +110,54 @@ const accessToken = jwt.sign(
 return res.json({
   error : false,
   message: "Login Successful",
-  user: {fullName: user.fullName,email:user.email},
+  user: {fullName: user.fullName,email:user.email,isAdmin: user.isAdmin},
   accessToken,
 });
 
 });
+
+
+
+
+// Route to handle user deletion requests
+// In your index.js or routes file where you handle deletion requests
+app.post("/api/request-account-deletion", authenticateToken, async (req, res) => {
+  try {
+    console.log("Processing deletion request for user:", req.user.userId);
+    
+    // Check if user already has a pending request
+    const existingRequest = await DeletionRequest.findOne({ 
+      userId: req.user.userId,
+      status: 'pending'
+    });
+    
+    if (existingRequest) {
+      console.log("Duplicate request detected for user:", req.user.userId);
+      return res.status(400).json({ 
+        error: true, 
+        message: 'You already have a pending account deletion request' 
+      });
+    }
+    
+    console.log("Creating new deletion request for user:", req.user.userId);
+    // Create new deletion request
+    const deletionRequest = new DeletionRequest({
+      userId: req.user.userId
+    });
+    
+    await deletionRequest.save();
+    console.log("Deletion request saved successfully for user:", req.user.userId);
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'Account deletion request submitted successfully' 
+    });
+  } catch (error) {
+    console.error("Deletion request error:", error);
+    res.status(500).json({ error: true, message: error.message });
+  }
+});
+
 
 // // ***********************GET USER**************
 app.get("/get-user", authenticateToken ,async (req,res)=>{
@@ -115,35 +176,67 @@ app.get("/get-user", authenticateToken ,async (req,res)=>{
 })
 
 // // **********************************ADD TRAVEL STORY
-app.post("/add-travel-story", authenticateToken ,async (req,res)=>{
-const {title , story,visitedLocation,imageUrl,visitedDate} = req.body;
-const {userId} = req.user
+// app.post("/add-travel-story", authenticateToken ,async (req,res)=>{
+// const {title , story,visitedLocation,imageUrl,visitedDate} = req.body;
+// const {userId} = req.user
 
-//Vaildate required fields
-if (!title || !story || !visitedLocation || !imageUrl || !visitedDate){
-  return res.status(400).json({error : true,message: "All fields are required"});
-}
+// //Vaildate required fields
+// if (!title || !story || !visitedLocation || !imageUrl || !visitedDate){
+//   return res.status(400).json({error : true,message: "All fields are required"});
+// }
 
 
-//Convert visiteddate from milliseconds to date object
-const parsedVisitedDate = new Date(parseInt(visitedDate));
-try{
-  const travelStory = new TravelStory({
-    title,
-    story,
-    visitedLocation,
-    userId,
-    imageUrl,
-    visitedDate: parsedVisitedDate,
-  });
-  await travelStory.save();
-  res.status(201).json({story: travelStory,message : 'Added Successfully'});
+// //Convert visiteddate from milliseconds to date object
+// const parsedVisitedDate = new Date(parseInt(visitedDate));
+// try{
+//   const travelStory = new TravelStory({
+//     title,
+//     story,
+//     visitedLocation,
+//     userId,
+//     imageUrl,
+//     visitedDate: parsedVisitedDate,
+//   });
+//   await travelStory.save();
+//   res.status(201).json({story: travelStory,message : 'Added Successfully'});
 
-}
-catch(error){
-  res.status(400).json({error:true,message:error.message});
-}
-})
+// }
+// catch(error){
+//   res.status(400).json({error:true,message:error.message});
+// }
+// })
+
+app.post("/add-travel-story", authenticateToken, async (req, res) => {
+  const { title, story, visitedLocation, imageUrl, visitedDate, fileSize } = req.body;
+  const { userId } = req.user;
+
+  // Validate required fields
+  if (!title || !story || !visitedLocation || !imageUrl || !visitedDate) {
+    return res.status(400).json({ error: true, message: "All fields are required" });
+  }
+
+  // Convert visiteddate from milliseconds to date object
+  const parsedVisitedDate = new Date(parseInt(visitedDate));
+  try {
+    const travelStory = new TravelStory({
+      title,
+      story,
+      visitedLocation,
+      userId,
+      imageUrl,
+      visitedDate: parsedVisitedDate,
+      fileSize: fileSize || 0 // Store the file size, default to 0 if not provided
+    });
+    
+    await travelStory.save();
+    
+    // The post-save hook will update the user's storage usage
+    
+    res.status(201).json({ story: travelStory, message: 'Added Successfully' });
+  } catch (error) {
+    res.status(400).json({ error: true, message: error.message });
+  }
+});
 
 
 
@@ -164,22 +257,41 @@ app.get("/get-all-stories", authenticateToken ,async (req,res)=>{
 
 
 // //*Route to handle image upload
-app.post("/image-upload", upload.single("image"),async (req,res)=>{
-  try{
-    if(!req.file){
+// app.post("/image-upload", upload.single("image"),async (req,res)=>{
+//   try{
+//     if(!req.file){
+//       return res
+//       .status(400)
+//       .json({error : true,message : "No image uploaded"});
+//     }
+
+//     const imageUrl = `http://localhost:8000/uploads/${req.file.filename}`;
+
+//     res.status(200).json({imageUrl});
+//   }
+//   catch(error){
+//     res.status(500).json({error: true,message:error.message});
+//   }
+// });
+
+
+app.post("/image-upload", upload.single("image"), async (req, res) => {
+  try {
+    if (!req.file) {
       return res
-      .status(400)
-      .json({error : true,message : "No image uploaded"});
+        .status(400)
+        .json({ error: true, message: "No image uploaded" });
     }
 
     const imageUrl = `http://localhost:8000/uploads/${req.file.filename}`;
+    const fileSize = req.file.size; // Get the file size
 
-    res.status(200).json({imageUrl});
-  }
-  catch(error){
-    res.status(500).json({error: true,message:error.message});
+    res.status(200).json({ imageUrl, fileSize }); // Return both URL and size
+  } catch (error) {
+    res.status(500).json({ error: true, message: error.message });
   }
 });
+
 
 //Delete an image from uploads folder
 
