@@ -57,23 +57,42 @@ const [openViewModal, setOpenViewModal] = useState({
       }
     }
   };
-
+//commented out for now
   //Get all travel stories**********************************************
-  const getAllTravelStories = async () => {
-    try {
-     const endpoint ="/get-all-stories";
-      const response = await axiosInstance.get(endpoint);
+  // const getAllTravelStories = async () => {
+  //   try {
+  //    const endpoint ="/get-all-stories";
+  //     const response = await axiosInstance.get(endpoint);
 
-      if (response.data && response.data.stories) {
-        setAllStories(response.data.stories);
-      }
-      else{
-        setAllStories([])      }
-    } catch (error) {
-      console.error("Error fetching stories:", error);
+  //     if (response.data && response.data.stories) {
+  //       setAllStories(response.data.stories);
+  //     }
+  //     else{
+  //       setAllStories([])      }
+  //   } catch (error) {
+  //     console.error("Error fetching stories:", error);
+  //     setAllStories([]);
+  //   }
+  // };
+const [loading, setLoading] = useState(true);
+
+const getAllTravelStories = async () => {
+  setLoading(true);  // Set loading to true when fetching stories
+  try {
+    const response = await axiosInstance.get("/get-all-stories");
+
+    if (response.data && response.data.stories) {
+      setAllStories(response.data.stories);
+    } else {
       setAllStories([]);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching stories:", error);
+    setAllStories([]);
+  } finally {
+    setLoading(false);  // Set loading to false after fetching
+  }
+};
 
   const handleEdit = (data) => {
     setOpenAddEditModal({ isShown: true, type: "edit", data:data });
@@ -83,32 +102,56 @@ const [openViewModal, setOpenViewModal] = useState({
     setOpenViewModal({ isShown: true, data });
   };
   
-  const updateIsFavourite = async (storyData) => {
+  // const updateIsFavourite = async (storyData) => {
        
-    // For regular stories
-    const storyId = storyData._id || storyData.id;
-    try {
-      const response = await axiosInstance.put(
-        "/update-is-favourite/" + storyId,
-        {
-          isFavourite: !storyData.isFavourite,
-        }
-      );
-      if (response.data && response.data.story) {
-        toast.success("Story Updated Successfully");
+  //   // For regular stories
+  //   const storyId = storyData._id;
+  //   try {
+  //     const response = await axiosInstance.put(
+  //       "/update-is-favourite/" + storyId,
+  //       {
+         
+  //         isFavourite: !storyData.isFavourite,
+  //       }
+  //     );
+  //     if (response.data && response.data.story) {
+  //       toast.success("Story Updated Successfully");
 
-        if(filterType === "search" && searchQuery){
-          onSearchStory(searchQuery);
-        }else if(filterType === "date"){
-          filterStoriesByDate(dateRange);
-        }else{
-        getAllTravelStories();
-        }
+  //       // if(filterType === "search" && searchQuery){
+  //       //   onSearchStory(searchQuery);
+  //       // }else if(filterType === "date"){
+  //       //   filterStoriesByDate(dateRange);
+  //       // }else{
+  //       getAllTravelStories();
+  //       // }
+  //     }
+  //   } catch (error) {
+  //     console.log("An unexpected error occured. Please try again.");
+  //   }
+  // };
+const updateIsFavourite = async (storyData) => {
+  const storyId = storyData._id;
+  try {
+    const response = await axiosInstance.put(
+      "/update-is-favourite/" + storyId,
+      {
+        isFavourite: !storyData.isFavourite,
       }
-    } catch (error) {
-      console.log("An unexpected error occured. Please try again.");
+    );
+    // Check for 'stor' instead of 'story'
+    if (response.data && response.data.stor) {
+      toast.success("Story Updated Successfully");
+      getAllTravelStories();
     }
-  };
+  } catch (error) {
+    console.log("An unexpected error occured. Please try again.");
+  }
+};
+
+
+
+
+
 
   //DELETE STORY
   const deleteTravelStory = async (data) => {
@@ -154,20 +197,43 @@ const [openViewModal, setOpenViewModal] = useState({
 //   }
 
 
+//commented out for now
+// const onSearchStory = async (query) => {
+//   try {
+//     const response = await axiosInstance.get("/search", {
+//       params: {
+//         query,
+//       },
+//     });
 
+//     if (response.data && response.data.stories) {
+//       setFilterType("search");
+//       setAllStories(response.data.stories);
+//       // console.log(response.data);
+//       // Handle the search results here (e.g., set to state)
+//     }
+//   } catch (error) {
+//     console.log("An unexpected error occurred. Please try again.");
+//   }
+// };
+
+// const handleClearSearch = () => {
+//   // Clear the search input (e.g., setQuery(''))
+//   // console.log("Search cleared.");
+
+//   setFilterType("");
+//   getAllTravelStories();
+
+// };
 const onSearchStory = async (query) => {
   try {
     const response = await axiosInstance.get("/search", {
-      params: {
-        query,
-      },
+      params: { query },
     });
 
     if (response.data && response.data.stories) {
       setFilterType("search");
       setAllStories(response.data.stories);
-      // console.log(response.data);
-      // Handle the search results here (e.g., set to state)
     }
   } catch (error) {
     console.log("An unexpected error occurred. Please try again.");
@@ -175,12 +241,10 @@ const onSearchStory = async (query) => {
 };
 
 const handleClearSearch = () => {
-  // Clear the search input (e.g., setQuery(''))
-  // console.log("Search cleared.");
-
-  setFilterType("");
-  getAllTravelStories();
-
+  getAllTravelStories();  // Fetch all stories again
+  setFilterType("");  // Reset filter type
+  setSearchQuery("");  // Clear the search input
+  // getAllTravelStories();  // Fetch all stories again
 };
 
 
@@ -248,9 +312,9 @@ const resetFilter =()=>{
 }
 
   useEffect(() => {
-//  getAllTravelStories();
-//   getUserInfo();
-//   return ()=>{};
+  getAllTravelStories();
+  getUserInfo();
+  return ()=>{};
   },[]);
 
   return (
