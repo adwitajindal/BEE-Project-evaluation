@@ -8,8 +8,8 @@ This is a travel story management application where users can:
 
 Privacy & Authentication
 To ensure user privacy, we have implemented authentication:  
-- Signup Page: Stores user information in a JSON file (temporary storage).  
-- Login Page: Reads user data from the JSON file and verifies credentials using JWT tokens.  
+- Signup Page: Stores user information in database  
+- Login Page: Reads user data from the database(mongoose) and verifies credentials using JWT tokens.  
 
 Technology Stack  
 Frontend**  
@@ -30,8 +30,16 @@ The backend currently supports the following five endpoints:
 4️⃣ POST /create-account – Register a new user.  
 5️⃣ POST /login – Authenticate and log in a user.  
 
-Future Enhancements  
-🔹 Database Integration: User data and stories will be stored in MongoDB instead of JSON files.  
-🔹 Frontend Development: The UI is currently under development.  
+To get it on your local machine 
+
+run these commands on terminal
+-> npm install
+-> npm install vite
+-> npm install axios
+-> npm install mongoose 
+-> npm install nodemon 
+
+
+add your database connection string in config.json 
 
 Would you like any further refinements? 🚀

@@ -4,7 +4,7 @@ import React from 'react';
 import Login from "./pages/Auth/Login";
 import SignUp from "./pages/Auth/SignUp";
 import Home from "./pages/Home/Home.jsx";
-import AdminDashboard from "./pages/Home/AdminDashboard"; // Updated import path
+import AdminDashboard from "./pages/Home/AdminDashboard"; 
 
 const App = () => {
   return (
