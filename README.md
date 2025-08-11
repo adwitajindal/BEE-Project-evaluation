@@ -12,7 +12,7 @@ To ensure user privacy, we have implemented authentication:
 - Login Page: Reads user data from the database(mongoose) and verifies credentials using JWT tokens.  
 
 Technology Stack  
-Frontend**  
+Frontend
 🚀 React.js – Component-based UI development  
 🎨 Tailwind CSS – Styling and responsiveness  
 ⚡ Vite – Fast development and build tool  
