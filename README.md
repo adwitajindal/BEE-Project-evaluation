@@ -30,16 +30,3 @@ The backend currently supports the following five endpoints:
 4️⃣ POST /create-account – Register a new user.  
 5️⃣ POST /login – Authenticate and log in a user.  
 
-To get it on your local machine 
-
-run these commands on terminal
--> npm install
--> npm install vite
--> npm install axios
--> npm install mongoose 
--> npm install nodemon 
-
-
-add your database connection string in config.json 
-
-Would you like any further refinements? 🚀
